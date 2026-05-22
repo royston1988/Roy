@@ -3,6 +3,23 @@ export type ChatMessage = {
   content: string;
 };
 
+export type Health = {
+  ok: boolean;
+  model: string;
+};
+
+export async function getHealth(signal?: AbortSignal): Promise<Health | null> {
+  try {
+    const res = await fetch("/api/health", { signal });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<Health>;
+    if (typeof data.model !== "string" || typeof data.ok !== "boolean") return null;
+    return { ok: data.ok, model: data.model };
+  } catch {
+    return null;
+  }
+}
+
 type StreamHandlers = {
   onDelta: (text: string) => void;
   onDone: () => void;

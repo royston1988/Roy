@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { streamChat, type ChatMessage } from "./api";
+import { getHealth, streamChat, type ChatMessage } from "./api";
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [model, setModel] = useState<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -15,6 +16,14 @@ export default function App() {
       behavior: "smooth",
     });
   }, [messages, streaming]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getHealth(controller.signal).then((h) => {
+      if (h?.ok) setModel(h.model);
+    });
+    return () => controller.abort();
+  }, []);
 
   async function send() {
     const text = input.trim();
@@ -71,7 +80,10 @@ export default function App() {
         <span className="logo">J</span>
         <div>
           <h1>Jarvis</h1>
-          <p className="sub">your coding assistant</p>
+          <p className="sub">
+            your coding assistant
+            {model && <span className="model"> · {model}</span>}
+          </p>
         </div>
       </header>
 
