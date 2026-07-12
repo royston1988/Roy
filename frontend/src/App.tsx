@@ -1,114 +1,79 @@
-import { useEffect, useRef, useState } from "react";
-import { streamChat, type ChatMessage } from "./api";
+import { useCallback, useEffect, useState } from "react";
+import type { Task } from "./api";
+import { getTasks } from "./api";
+import TasksView from "./components/TasksView";
+import ScheduleView from "./components/ScheduleView";
+import PlanView from "./components/PlanView";
+import ReviewView from "./components/ReviewView";
+import ChatView from "./components/ChatView";
+import Pomodoro from "./components/Pomodoro";
+
+type Tab = "today" | "schedule" | "plan" | "review" | "chat";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "schedule", label: "Schedule" },
+  { id: "plan", label: "Plan" },
+  { id: "review", label: "Review" },
+  { id: "chat", label: "Chat" },
+];
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const [tab, setTab] = useState<Tab>("today");
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [focusTask, setFocusTask] = useState<Task | null>(null);
+  const [reviewKey, setReviewKey] = useState(0);
+
+  const reload = useCallback(() => {
+    getTasks().then(setTasks);
+  }, []);
 
   useEffect(() => {
-    scrollerRef.current?.scrollTo({
-      top: scrollerRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, streaming]);
-
-  async function send() {
-    const text = input.trim();
-    if (!text || streaming) return;
-
-    setError(null);
-    const next: ChatMessage[] = [
-      ...messages,
-      { role: "user", content: text },
-      { role: "assistant", content: "" },
-    ];
-    setMessages(next);
-    setInput("");
-    setStreaming(true);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    await streamChat(next.slice(0, -1), {
-      signal: controller.signal,
-      onDelta: (delta) => {
-        setMessages((prev) => {
-          const copy = prev.slice();
-          const last = copy[copy.length - 1];
-          if (last?.role === "assistant") {
-            copy[copy.length - 1] = { ...last, content: last.content + delta };
-          }
-          return copy;
-        });
-      },
-      onDone: () => setStreaming(false),
-      onError: (message) => {
-        setError(message);
-        setStreaming(false);
-      },
-    });
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  }
-
-  const lastIsEmpty =
-    messages.length > 0 &&
-    messages[messages.length - 1].role === "assistant" &&
-    messages[messages.length - 1].content === "";
+    reload();
+  }, [reload]);
 
   return (
     <div className="app">
       <header className="header">
-        <span className="logo">J</span>
+        <span className="logo">R</span>
         <div>
-          <h1>Jarvis</h1>
-          <p className="sub">your coding assistant</p>
+          <h1>Roy</h1>
+          <p className="sub">your time-management assistant</p>
         </div>
       </header>
 
-      <div className="scroller" ref={scrollerRef}>
-        {messages.length === 0 && (
-          <div className="empty">
-            <p>Ask Jarvis anything about your code.</p>
-          </div>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`msg msg-${m.role}`}>
-            <div className="bubble">
-              {m.content || (streaming && i === messages.length - 1 ? (
-                <span className="thinking">thinking…</span>
-              ) : null)}
-            </div>
-          </div>
+      <nav className="tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            className={`tab ${tab === t.id ? "active" : ""}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
         ))}
-        {error && <div className="error">⚠ {error}</div>}
-        {!error && streaming && lastIsEmpty === false && (
-          <div className="hint">streaming…</div>
-        )}
-      </div>
+      </nav>
 
-      <div className="composer">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Message Jarvis…  (Enter to send, Shift+Enter for newline)"
-          rows={3}
-          disabled={streaming}
-        />
-        <button onClick={send} disabled={streaming || !input.trim()}>
-          {streaming ? "…" : "Send"}
-        </button>
-      </div>
+      <main className="content">
+        {tab === "today" && (
+          <TasksView
+            tasks={tasks}
+            reload={reload}
+            activeTaskId={focusTask?.id ?? null}
+            onFocus={(t) => setFocusTask(t)}
+          />
+        )}
+        {tab === "schedule" && <ScheduleView tasks={tasks} />}
+        {tab === "plan" && <PlanView />}
+        {tab === "review" && <ReviewView refreshKey={reviewKey} />}
+        {tab === "chat" && <ChatView />}
+      </main>
+
+      <Pomodoro
+        task={focusTask}
+        onClear={() => setFocusTask(null)}
+        onLogged={() => setReviewKey((k) => k + 1)}
+      />
     </div>
   );
 }
