@@ -1,8 +1,8 @@
 {
-  "name": "jarvis",
+  "name": "roy",
   "private": true,
   "version": "0.1.0",
-  "description": "Jarvis — a developer coding assistant powered by Claude",
+  "description": "Roy — a CEO attention-management system powered by Claude",
   "workspaces": [
     "backend",
     "frontend"

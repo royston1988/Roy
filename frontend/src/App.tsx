@@ -1,114 +1,122 @@
-import { useEffect, useRef, useState } from "react";
-import { streamChat, type ChatMessage } from "./api";
+import { useState } from "react";
+import { StoreProvider, useStore } from "./store";
+import { Assistant } from "./components/Assistant";
+import { Today } from "./pages/Today";
+import { Inbox } from "./pages/Inbox";
+import { Priorities } from "./pages/Priorities";
+import { Calendar } from "./pages/Calendar";
+import { Decisions } from "./pages/Decisions";
+import { Delegation } from "./pages/Delegation";
+import { Review } from "./pages/Review";
+
+type Page =
+  | "today"
+  | "inbox"
+  | "priorities"
+  | "calendar"
+  | "decisions"
+  | "delegation"
+  | "review";
+
+const NAV: { id: Page; label: string; icon: string }[] = [
+  { id: "today", label: "Today", icon: "◎" },
+  { id: "inbox", label: "Inbox", icon: "⤵" },
+  { id: "priorities", label: "Priorities", icon: "▤" },
+  { id: "calendar", label: "Calendar", icon: "▦" },
+  { id: "decisions", label: "Decisions", icon: "✓" },
+  { id: "delegation", label: "Delegation", icon: "⇢" },
+  { id: "review", label: "Review", icon: "∿" },
+];
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  return (
+    <StoreProvider>
+      <Shell />
+    </StoreProvider>
+  );
+}
 
-  useEffect(() => {
-    scrollerRef.current?.scrollTo({
-      top: scrollerRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, streaming]);
+function Shell() {
+  const [page, setPage] = useState<Page>("today");
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const store = useStore();
 
-  async function send() {
-    const text = input.trim();
-    if (!text || streaming) return;
+  const badges: Partial<Record<Page, number>> = {
+    inbox: store.inbox.length,
+    decisions: store.decisions.filter((d) => d.status === "pending").length,
+    delegation: store.delegations.filter((d) => d.status === "delayed").length,
+  };
 
-    setError(null);
-    const next: ChatMessage[] = [
-      ...messages,
-      { role: "user", content: text },
-      { role: "assistant", content: "" },
-    ];
-    setMessages(next);
-    setInput("");
-    setStreaming(true);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    await streamChat(next.slice(0, -1), {
-      signal: controller.signal,
-      onDelta: (delta) => {
-        setMessages((prev) => {
-          const copy = prev.slice();
-          const last = copy[copy.length - 1];
-          if (last?.role === "assistant") {
-            copy[copy.length - 1] = { ...last, content: last.content + delta };
-          }
-          return copy;
-        });
-      },
-      onDone: () => setStreaming(false),
-      onError: (message) => {
-        setError(message);
-        setStreaming(false);
-      },
-    });
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  }
-
-  const lastIsEmpty =
-    messages.length > 0 &&
-    messages[messages.length - 1].role === "assistant" &&
-    messages[messages.length - 1].content === "";
+  const go = (p: string) => setPage(p as Page);
 
   return (
-    <div className="app">
-      <header className="header">
-        <span className="logo">J</span>
-        <div>
-          <h1>Jarvis</h1>
-          <p className="sub">your coding assistant</p>
+    <div className="shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <span className="brand-mark">R</span>
+          <div>
+            <div className="brand-name">Roy</div>
+            <div className="brand-sub">attention management</div>
+          </div>
         </div>
-      </header>
-
-      <div className="scroller" ref={scrollerRef}>
-        {messages.length === 0 && (
-          <div className="empty">
-            <p>Ask Jarvis anything about your code.</p>
-          </div>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`msg msg-${m.role}`}>
-            <div className="bubble">
-              {m.content || (streaming && i === messages.length - 1 ? (
-                <span className="thinking">thinking…</span>
-              ) : null)}
-            </div>
-          </div>
-        ))}
-        {error && <div className="error">⚠ {error}</div>}
-        {!error && streaming && lastIsEmpty === false && (
-          <div className="hint">streaming…</div>
-        )}
-      </div>
-
-      <div className="composer">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Message Jarvis…  (Enter to send, Shift+Enter for newline)"
-          rows={3}
-          disabled={streaming}
-        />
-        <button onClick={send} disabled={streaming || !input.trim()}>
-          {streaming ? "…" : "Send"}
+        <nav className="nav">
+          {NAV.map((n) => (
+            <button
+              key={n.id}
+              className={`nav-item ${page === n.id ? "active" : ""}`}
+              onClick={() => setPage(n.id)}
+            >
+              <span className="nav-icon">{n.icon}</span>
+              <span className="nav-label">{n.label}</span>
+              {badges[n.id] ? <span className="nav-badge">{badges[n.id]}</span> : null}
+            </button>
+          ))}
+        </nav>
+        <button
+          className="assistant-toggle"
+          onClick={() => setAssistantOpen((o) => !o)}
+        >
+          ✨ Chief of Staff
         </button>
-      </div>
+      </aside>
+
+      <main className="main">
+        <header className="topbar">
+          <h1 className="page-title">{NAV.find((n) => n.id === page)?.label}</h1>
+          <div className="topbar-right">
+            {store.error && <span className="error-badge">⚠ {store.error}</span>}
+            {!store.aiEnabled && (
+              <span className="ai-off" title="Set ANTHROPIC_API_KEY to enable AI">
+                AI offline
+              </span>
+            )}
+            <button
+              className="assistant-toggle mobile"
+              onClick={() => setAssistantOpen((o) => !o)}
+            >
+              ✨
+            </button>
+          </div>
+        </header>
+
+        <div className="content">
+          {store.loading ? (
+            <div className="loading">Loading…</div>
+          ) : (
+            <>
+              {page === "today" && <Today go={go} />}
+              {page === "inbox" && <Inbox />}
+              {page === "priorities" && <Priorities />}
+              {page === "calendar" && <Calendar />}
+              {page === "decisions" && <Decisions />}
+              {page === "delegation" && <Delegation />}
+              {page === "review" && <Review />}
+            </>
+          )}
+        </div>
+      </main>
+
+      <Assistant open={assistantOpen} onClose={() => setAssistantOpen(false)} />
     </div>
   );
 }
