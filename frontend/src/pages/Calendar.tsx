@@ -78,11 +78,14 @@ export function Calendar() {
 
   async function acceptPlan() {
     if (!plan) return;
-    for (const b of plan) {
-      await api.post("/blocks", { date: todayStr(), ...b });
+    try {
+      await Promise.all(plan.map((b) => api.post("/blocks", { date: todayStr(), ...b })));
+      setPlan(null);
+    } catch (err) {
+      setPlanNote(err instanceof Error ? err.message : "failed to add blocks");
+    } finally {
+      await store.refresh();
     }
-    setPlan(null);
-    await store.refresh();
   }
 
   return (

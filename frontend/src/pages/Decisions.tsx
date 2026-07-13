@@ -144,12 +144,20 @@ function MeetingManager() {
     await store.refresh();
   }
 
+  // The spec's post-meeting record: decision, owner, deadline, follow-up date.
   async function recordOutcome(m: Meeting) {
-    const decisionMade = prompt(`Decision from "${m.title}"?`) ?? "";
+    const decisionMade = prompt(`Decision from "${m.title}"?`, m.decisionMade ?? "") ?? "";
     if (!decisionMade.trim()) return;
-    const followUpDate = prompt("Follow-up date (YYYY-MM-DD)?") ?? "";
+    const actionOwner =
+      prompt("Who owns the action?", m.actionOwner ?? "") ?? m.actionOwner ?? "";
+    const deadline =
+      prompt("Deadline (YYYY-MM-DD)?", m.deadline ?? "") ?? m.deadline ?? "";
+    const followUpDate =
+      prompt("Follow-up date (YYYY-MM-DD)?", m.followUpDate ?? "") ?? "";
     await api.patch(`/meetings/${m.id}`, {
       decisionMade,
+      actionOwner: actionOwner || undefined,
+      deadline: deadline || undefined,
       followUpDate: followUpDate || undefined,
     });
     await store.refresh();
@@ -285,11 +293,9 @@ function MeetingManager() {
                   </>
                 )}
               </dl>
-              {!m.decisionMade && (
-                <button className="chip" onClick={() => recordOutcome(m)}>
-                  Record outcome
-                </button>
-              )}
+              <button className="chip" onClick={() => void recordOutcome(m)}>
+                {m.decisionMade ? "Edit outcome" : "Record outcome"}
+              </button>
             </li>
           ))}
         </ul>

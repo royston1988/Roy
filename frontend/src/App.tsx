@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { StoreProvider, useStore } from "./store";
+import { isOverdue } from "./ui";
 import { Assistant } from "./components/Assistant";
 import { Today } from "./pages/Today";
 import { Inbox } from "./pages/Inbox";
@@ -44,7 +45,9 @@ function Shell() {
   const badges: Partial<Record<Page, number>> = {
     inbox: store.inbox.length,
     decisions: store.decisions.filter((d) => d.status === "pending").length,
-    delegation: store.delegations.filter((d) => d.status === "delayed").length,
+    delegation: store.delegations.filter(
+      (d) => d.status !== "done" && (d.status === "delayed" || isOverdue(d.deadline)),
+    ).length,
   };
 
   const go = (p: string) => setPage(p as Page);

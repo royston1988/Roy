@@ -68,15 +68,21 @@ export function Pill({
   );
 }
 
-/** Red for overdue, yellow for due soon, from a YYYY-MM-DD deadline. */
+/** Red for overdue, yellow for due today, from a YYYY-MM-DD deadline (local time). */
 export function deadlineTone(
   deadline?: string,
 ): "red" | "yellow" | "neutral" {
   if (!deadline) return "neutral";
-  const today = new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   if (deadline < today) return "red";
   if (deadline === today) return "yellow";
   return "neutral";
+}
+
+/** True when a dated item is past due (local calendar day). */
+export function isOverdue(deadline?: string): boolean {
+  return deadlineTone(deadline) === "red";
 }
 
 export function Field({

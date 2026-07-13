@@ -1,10 +1,13 @@
 // Deterministic time analysis for the daily/weekly CEO time report.
 import type { BlockType, Database } from "./types.js";
 
-function minutesBetween(start: string, end: string): number {
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  return Math.max(0, eh * 60 + em - (sh * 60 + sm));
+export function minutesBetween(start: string, end: string): number {
+  const [sh, sm] = String(start).split(":").map(Number);
+  const [eh, em] = String(end).split(":").map(Number);
+  const mins = eh * 60 + em - (sh * 60 + sm);
+  // A malformed time yields NaN; treat the block as zero-length rather than
+  // letting NaN poison every total in the report.
+  return Number.isFinite(mins) ? Math.max(0, mins) : 0;
 }
 
 // How each block type maps onto "CEO time quality".
@@ -42,6 +45,7 @@ export function timeReport(db: Database, from: string, to: string): TimeReport {
   const quality = { high: 0, delegatable: 0, low: 0 };
 
   for (const b of blocks) {
+    if (!(b.type in byType)) continue; // skip blocks with an unknown type
     const hrs = minutesBetween(b.start, b.end) / 60;
     byType[b.type] += hrs;
     quality[QUALITY[b.type]] += hrs;

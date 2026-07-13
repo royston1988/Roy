@@ -6,6 +6,8 @@ import type {
   InboxClassification,
 } from "./types.js";
 import { enrich } from "./priority.js";
+import { minutesBetween } from "./analytics.js";
+import { localDateOf, normalizeHM } from "./dates.js";
 
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
 
@@ -185,7 +187,32 @@ ${pendingDecisions || "(none)"}
 Waiting on others:
 ${waiting || "(none)"}`;
 
-  return askJson<{ blocks: PlanBlock[]; note: string }>(system, user);
+  const plan = await askJson<{ blocks: PlanBlock[]; note: string }>(system, user);
+  return { ...plan, blocks: sanitizePlanBlocks(plan.blocks) };
+}
+
+const BLOCK_TYPES: CalendarBlock["type"][] = [
+  "thinking",
+  "decision",
+  "meeting",
+  "review",
+  "people",
+  "personal",
+];
+
+/** Normalize model output ("9:00" → "09:00", unknown types → thinking); drop invalid blocks. */
+function sanitizePlanBlocks(blocks: PlanBlock[]): PlanBlock[] {
+  if (!Array.isArray(blocks)) return [];
+  const clean: PlanBlock[] = [];
+  for (const b of blocks) {
+    const start = normalizeHM(b?.start);
+    const end = normalizeHM(b?.end);
+    const title = typeof b?.title === "string" ? b.title.trim() : "";
+    if (!start || !end || !title) continue;
+    const type = BLOCK_TYPES.includes(b.type) ? b.type : "thinking";
+    clean.push({ start, end, title, type });
+  }
+  return clean;
 }
 
 /** End-of-day summary + time analysis. */
@@ -205,7 +232,7 @@ export async function reviewDay(
     .join(", ");
 
   const doneToday = db.tasks.filter(
-    (t) => t.status === "done" && (t.completedAt ?? "").slice(0, 10) === date,
+    (t) => t.status === "done" && t.completedAt && localDateOf(t.completedAt) === date,
   );
 
   if (!client) {
@@ -229,12 +256,6 @@ ${Object.entries(answers)
     .join("\n")}`;
 
   return askJson<{ summary: string }>(system, user);
-}
-
-function minutesBetween(start: string, end: string): number {
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  return Math.max(0, eh * 60 + em - (sh * 60 + sm));
 }
 
 export function delegationReminderText(d: Delegation): string {

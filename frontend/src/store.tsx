@@ -17,7 +17,13 @@ import type {
   Task,
 } from "./types";
 
-export const todayStr = () => new Date().toISOString().slice(0, 10);
+// Local calendar day — never UTC, which would flip the day at 8am for UTC+8.
+export const todayStr = () => {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+};
 
 type Store = {
   tasks: Task[];
@@ -78,6 +84,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Mutation handlers across the app fire-and-forget API calls; surface any
+  // failure in the error banner instead of losing it as an unhandled rejection.
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const msg =
+        e.reason instanceof Error ? e.reason.message : String(e.reason ?? "request failed");
+      setError(msg);
+      setTimeout(() => setError(null), 6000);
+    };
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => window.removeEventListener("unhandledrejection", onRejection);
+  }, []);
 
   return (
     <Ctx.Provider

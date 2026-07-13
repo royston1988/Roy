@@ -40,10 +40,12 @@ export function Inbox() {
       const res = await api.post<InboxItem & { reason?: string }>(
         `/inbox/${item.id}/classify`,
       );
-      // stash reason locally by refreshing then patching in memory is overkill;
-      // just refresh and rely on classification. Reason shown transiently.
       await store.refresh();
-      if (res.reason) alert(`${CLASSIFY_LABEL[res.classification!]} — ${res.reason}`);
+      if (res.classification && res.reason) {
+        alert(`${CLASSIFY_LABEL[res.classification]} — ${res.reason}`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "classification failed");
     } finally {
       setBusy(null);
     }

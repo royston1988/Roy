@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api } from "../api";
 import { useStore } from "../store";
 import type { Delegation as Del, DelegationStatus } from "../types";
-import { deadlineTone, Pill } from "../ui";
+import { deadlineTone, isOverdue, Pill } from "../ui";
 
 const STATUSES: DelegationStatus[] = ["in-progress", "waiting", "delayed", "done"];
 const STATUS_LABEL: Record<DelegationStatus, string> = {
@@ -60,8 +60,8 @@ export function Delegation() {
           <h2>Waiting for Others</h2>
         </div>
         <p className="muted small">
-          Once you delegate something, it should leave your head. Roy reminds the
-          owner — you don't have to remember.
+          Once you delegate something, it should leave your head. Roy flags anything
+          overdue in red and gives you one-click reminder text to send the owner.
         </p>
         <div className="deleg-form">
           <input
@@ -112,7 +112,12 @@ export function Delegation() {
               </thead>
               <tbody>
                 {active.map((d) => (
-                  <tr key={d.id} className={d.status === "delayed" ? "row-delayed" : ""}>
+                  <tr
+                    key={d.id}
+                    className={
+                      d.status === "delayed" || isOverdue(d.deadline) ? "row-delayed" : ""
+                    }
+                  >
                     <td className="title-cell">{d.matter}</td>
                     <td>{d.owner}</td>
                     <td className="muted">{d.expectedResult || "—"}</td>

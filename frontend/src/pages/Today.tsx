@@ -1,23 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { useStore, todayStr } from "../store";
-import { BLOCK_LABEL, Pill } from "../ui";
+import { BLOCK_LABEL, isOverdue, Pill } from "../ui";
 import { FocusSession } from "../components/FocusSession";
 
 export function Today({ go }: { go: (page: string) => void }) {
   const store = useStore();
   const [goal, setGoal] = useState("");
+  const [goalDirty, setGoalDirty] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
 
+  // Sync store → input only while the user isn't mid-edit, so a refresh
+  // finishing after blur can't clobber new keystrokes.
   useEffect(() => {
-    setGoal(store.day.mainGoal ?? "");
-  }, [store.day.mainGoal]);
+    if (!goalDirty) setGoal(store.day.mainGoal ?? "");
+  }, [store.day.mainGoal, goalDirty]);
 
   async function saveGoal() {
     setSavingGoal(true);
-    await api.put("/day", { date: todayStr(), mainGoal: goal });
-    await store.refresh();
-    setSavingGoal(false);
+    try {
+      await api.put("/day", { date: todayStr(), mainGoal: goal });
+      setGoalDirty(false);
+      await store.refresh();
+    } finally {
+      setSavingGoal(false);
+    }
   }
 
   const top3 = useMemo(() => {
@@ -41,8 +48,11 @@ export function Today({ go }: { go: (page: string) => void }) {
           <input
             className="goal-input"
             value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            onBlur={saveGoal}
+            onChange={(e) => {
+              setGoal(e.target.value);
+              setGoalDirty(true);
+            }}
+            onBlur={() => void saveGoal()}
             placeholder="e.g. Increase live traffic and improve sales conversion"
           />
           {savingGoal && <span className="muted small">saving…</span>}
@@ -149,7 +159,9 @@ export function Today({ go }: { go: (page: string) => void }) {
                 .slice(0, 4)
                 .map((d) => (
                   <li key={d.id}>
-                    <Pill tone={d.status === "delayed" ? "red" : "blue"}>{d.owner}</Pill>
+                    <Pill tone={d.status === "delayed" || isOverdue(d.deadline) ? "red" : "blue"}>
+                      {d.owner}
+                    </Pill>
                     <span className="grow">{d.matter}</span>
                   </li>
                 ))}

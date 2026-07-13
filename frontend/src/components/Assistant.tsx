@@ -29,6 +29,13 @@ export function Assistant({
     });
   }, [messages, streaming]);
 
+  // Cancel an in-flight stream when the panel closes or unmounts, so tokens
+  // stop the moment the user stops reading.
+  useEffect(() => {
+    if (!open) abortRef.current?.abort();
+  }, [open]);
+  useEffect(() => () => abortRef.current?.abort(), []);
+
   function context(): string {
     const openTasks = store.tasks.filter((t) => t.status === "todo");
     const pending = store.decisions.filter((d) => d.status === "pending");
@@ -73,6 +80,10 @@ export function Assistant({
         }),
       onDone: () => setStreaming(false),
       onError: (m) => {
+        if (controller.signal.aborted) {
+          setStreaming(false);
+          return;
+        }
         setMessages((prev) => {
           const copy = prev.slice();
           const last = copy[copy.length - 1];
