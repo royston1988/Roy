@@ -1,6 +1,6 @@
 import path from "node:path";
 import express, { type Request, type Response } from "express";
-import { config, IMAGES_DIR, live, ROOT } from "./config.js";
+import { config, IMAGES_DIR, live, photoModel, ROOT } from "./config.js";
 import { faceFiles } from "./images.js";
 import { approveLook, listJobs, redoLook, rejectLook, startJob } from "./jobs.js";
 import { listProducts } from "./shopline.js";
@@ -25,7 +25,7 @@ app.get(
   handle(() => ({
     live,
     faces: { yan: faceFiles("yan").length, host: faceFiles("host").length },
-    photoModel: config.geminiModel,
+    photoModel,
   })),
 );
 

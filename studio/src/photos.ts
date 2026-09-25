@@ -3,7 +3,7 @@ import { demoPhoto } from "./demo.js";
 import type { Brief } from "./director.js";
 import { sniffMime, type Img } from "./images.js";
 
-// Google Gemini image model ("Nano Banana Pro"), called over plain HTTPS.
+// Google Gemini image model (Nano Banana 2 by default), called over plain HTTPS.
 
 const inline = (img: Img) => ({ inlineData: { mimeType: img.mime, data: img.data.toString("base64") } });
 

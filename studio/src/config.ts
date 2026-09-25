@@ -25,7 +25,7 @@ export const config = {
   shoplineApi: process.env.SHOPLINE_API_URL || "https://open.shopline.io/v1",
   geminiKey: process.env.GEMINI_API_KEY || "",
   geminiApi: process.env.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta",
-  geminiModel: process.env.GEMINI_IMAGE_MODEL || "gemini-3-pro-image-preview",
+  geminiModel: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image",
   claudeKey: process.env.ANTHROPIC_API_KEY || "",
   claudeModel: process.env.STUDIO_CLAUDE_MODEL || "claude-opus-5",
 };
@@ -36,6 +36,14 @@ export const live = {
   photos: Boolean(config.geminiKey),
   claude: Boolean(config.claudeKey),
 };
+
+// Friendly name and approximate US$ per 1K photo, shown on the page.
+const PHOTO_MODELS: Record<string, { name: string; price: number }> = {
+  "gemini-3.1-flash-image": { name: "Nano Banana 2", price: 0.067 },
+  "gemini-3.1-flash-image-preview": { name: "Nano Banana 2", price: 0.067 },
+  "gemini-3-pro-image-preview": { name: "Nano Banana Pro", price: 0.134 },
+};
+export const photoModel = PHOTO_MODELS[config.geminiModel] ?? { name: config.geminiModel, price: 0.1 };
 
 export const PEOPLE = { yan: "Yan", host: "Live host" } as const;
 export type Person = keyof typeof PEOPLE;

@@ -19,11 +19,11 @@ pretend photos. Nothing is sent to your shop and nothing costs money.
 
 Put these in the `.env` file at the top of the project (next to `.env.example`).
 
-### 1. Google AI photos (paid, about US$0.13 per photo)
+### 1. Google AI photos: Nano Banana 2 (paid, about US$0.07 per photo)
 
 1. Go to https://aistudio.google.com and sign in with Google.
 2. Click **Get API key** → **Create API key**.
-3. Turn on billing when it asks (the photo model has no free tier).
+3. Turn on billing when it asks.
 4. Add to `.env`: `GEMINI_API_KEY=your-key`
 
 ### 2. Shopline (older admin: admin.shoplineapp.com)
@@ -54,7 +54,8 @@ Restart `npm run studio`. The chips at the top turn green when each part is live
 
 ## Cost example
 
-20 products × 3 looks = 60 photos ≈ **US$8** for Google + about US$2 for Claude checks.
+20 products × 3 looks = 60 photos ≈ **US$4** for Google (Nano Banana 2) + about US$2 for Claude checks.
+With Nano Banana Pro it's about US$8 for Google.
 Each **Redo** is one more photo.
 
 ## Honest limits
@@ -73,6 +74,6 @@ Each **Redo** is one more photo.
 | `STUDIO_BRAND`        | `our fashion boutique`       | Brand name used when planning looks |
 | `STUDIO_ASPECT_RATIO` | `3:4`                        | Photo shape (`1:1` for square)  |
 | `STUDIO_IMAGE_SIZE`   | `1K`                         | `2K`/`4K` are sharper, but the design check skips photos over 5 MB |
-| `GEMINI_IMAGE_MODEL`  | `gemini-3-pro-image-preview` | Google photo model              |
+| `GEMINI_IMAGE_MODEL`  | `gemini-3.1-flash-image`     | Google photo model: Nano Banana 2. Use `gemini-3-pro-image-preview` for Nano Banana Pro |
 | `STUDIO_CLAUDE_MODEL` | `claude-opus-5`              | Claude model for planning and checks |
 | `STUDIO_PORT`         | `3002`                       | Page address port               |

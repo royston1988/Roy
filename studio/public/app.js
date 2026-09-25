@@ -1,4 +1,3 @@
-const PRICE_PER_PHOTO = 0.13; // Google Nano Banana Pro, 2K photo (US$)
 const LOOKS_PER_PRODUCT = 3;
 const PEOPLE = { yan: "Yan", host: "Live host" };
 
@@ -46,7 +45,7 @@ async function loadStatus() {
   const chip = (on, text) => h("span", { class: `chip ${on ? "on" : "off"}` }, text);
   $("chips").replaceChildren(
     chip(s.live.shopline, s.live.shopline ? "Shopline: connected" : "Shopline: demo"),
-    chip(s.live.photos, s.live.photos ? "AI photos: on" : "AI photos: demo"),
+    chip(s.live.photos, s.live.photos ? `AI photos: ${s.photoModel.name}` : "AI photos: demo"),
     chip(s.live.claude, s.live.claude ? "Design check: on" : "Design check: demo"),
     chip(s.faces.yan > 0, `Yan: ${s.faces.yan} photos`),
     chip(s.faces.host > 0, `Host: ${s.faces.host} photos`),
@@ -102,7 +101,7 @@ function renderBar() {
   const n = state.selected.size;
   $("bar").hidden = n === 0;
   const cost = state.status?.live.photos
-    ? `about US$${(n * LOOKS_PER_PRODUCT * PRICE_PER_PHOTO).toFixed(2)}`
+    ? `about US$${(n * LOOKS_PER_PRODUCT * state.status.photoModel.price).toFixed(2)}`
     : "free (demo)";
   $("bar-text").textContent = `${n} product${n === 1 ? "" : "s"} picked · ${n * LOOKS_PER_PRODUCT} photos · ${cost}`;
 }
