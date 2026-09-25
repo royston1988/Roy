@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photo Studio</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div>
+        <h1>Photo Studio</h1>
+        <p class="sub">Shopline photos → AI model photos → you approve → back to your shop</p>
+      </div>
+      <div id="chips" class="chips"></div>
+    </header>
+
+    <div id="demo" class="demo" hidden></div>
+
+    <nav class="tabs">
+      <button data-tab="products" class="tab active">1. Pick products</button>
+      <button data-tab="review" class="tab">2. Review photos <span id="waiting" class="count"></span></button>
+    </nav>
+
+    <main>
+      <section id="products">
+        <div id="product-grid" class="grid"></div>
+        <button id="more" class="ghost" hidden>Load more products</button>
+      </section>
+
+      <section id="review" hidden>
+        <p id="no-jobs" class="empty">No photos yet. Pick products in step 1.</p>
+        <div id="jobs"></div>
+      </section>
+    </main>
+
+    <footer id="bar" class="bar" hidden>
+      <span id="bar-text"></span>
+      <button id="make" class="primary">Make AI photos</button>
+    </footer>
+
+    <div id="toast" class="toast" hidden></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
