@@ -1,9 +1,19 @@
+export type Mode = "auto" | "quick" | "standard" | "deep";
+
+export type ModelInfo = {
+  tier: Exclude<Mode, "auto">;
+  label: string;
+  auto: boolean;
+};
+
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  model?: ModelInfo;
 };
 
 type StreamHandlers = {
+  onModel: (info: ModelInfo) => void;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (message: string) => void;
@@ -12,14 +22,18 @@ type StreamHandlers = {
 
 export async function streamChat(
   messages: ChatMessage[],
-  { onDelta, onDone, onError, signal }: StreamHandlers,
+  mode: Mode,
+  { onModel, onDelta, onDone, onError, signal }: StreamHandlers,
 ) {
   let res: Response;
   try {
     res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({
+        messages: messages.map(({ role, content }) => ({ role, content })),
+        mode,
+      }),
       signal,
     });
   } catch (err) {
@@ -53,13 +67,15 @@ export async function streamChat(
       buffer = buffer.slice(sep + 2);
       const parsed = parseFrame(frame);
       if (!parsed) continue;
-      if (parsed.event === "delta") {
-        onDelta(parsed.data.text ?? "");
+      if (parsed.event === "model") {
+        onModel(parsed.data as ModelInfo);
+      } else if (parsed.event === "delta") {
+        onDelta(String(parsed.data.text ?? ""));
       } else if (parsed.event === "done") {
         onDone();
         return;
       } else if (parsed.event === "error") {
-        onError(parsed.data.message ?? "unknown error");
+        onError(String(parsed.data.message ?? "unknown error"));
         return;
       }
     }
@@ -69,7 +85,7 @@ export async function streamChat(
 
 function parseFrame(
   frame: string,
-): { event: string; data: Record<string, string> } | null {
+): { event: string; data: Record<string, unknown> } | null {
   let event = "message";
   let dataLine = "";
   for (const line of frame.split("\n")) {

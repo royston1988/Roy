@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { streamChat, type ChatMessage } from "./api";
+import { streamChat, type ChatMessage, type Mode } from "./api";
+
+const MODE_OPTIONS: { value: Mode; label: string }[] = [
+  { value: "auto", label: "Auto — picks for you" },
+  { value: "quick", label: "Quick — Haiku 4.5, fastest & cheapest" },
+  { value: "standard", label: "Standard — Sonnet 5, everyday work" },
+  { value: "deep", label: "Deep — Opus 5, hardest problems" },
+];
+
+const TIER_ICON = { quick: "⚡", standard: "◆", deep: "🧠" } as const;
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [mode, setMode] = useState<Mode>("auto");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -33,8 +43,18 @@ export default function App() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    await streamChat(next.slice(0, -1), {
+    await streamChat(next.slice(0, -1), mode, {
       signal: controller.signal,
+      onModel: (model) => {
+        setMessages((prev) => {
+          const copy = prev.slice();
+          const last = copy[copy.length - 1];
+          if (last?.role === "assistant") {
+            copy[copy.length - 1] = { ...last, model };
+          }
+          return copy;
+        });
+      },
       onDelta: (delta) => {
         setMessages((prev) => {
           const copy = prev.slice();
@@ -73,6 +93,20 @@ export default function App() {
           <h1>Jarvis</h1>
           <p className="sub">your coding assistant</p>
         </div>
+        <label className="mode">
+          <span>AI model</span>
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value as Mode)}
+            disabled={streaming}
+          >
+            {MODE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
 
       <div className="scroller" ref={scrollerRef}>
@@ -83,6 +117,12 @@ export default function App() {
         )}
         {messages.map((m, i) => (
           <div key={i} className={`msg msg-${m.role}`}>
+            {m.model && (
+              <div className="model-tag">
+                {TIER_ICON[m.model.tier]} {m.model.label}
+                {m.model.auto ? " · auto-picked" : " · your pick"}
+              </div>
+            )}
             <div className="bubble">
               {m.content || (streaming && i === messages.length - 1 ? (
                 <span className="thinking">thinking…</span>

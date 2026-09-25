@@ -1,8 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { ModelChoice } from "./router.js";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+export const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const SYSTEM_PROMPT = `You are Jarvis, a concise developer coding assistant.
 
@@ -17,10 +16,10 @@ export type ChatMessage = {
   content: string;
 };
 
-export async function* streamChat(messages: ChatMessage[]) {
+export async function* streamChat(messages: ChatMessage[], choice: ModelChoice) {
   const stream = client.messages.stream({
-    model: MODEL,
-    max_tokens: 4096,
+    model: choice.model,
+    max_tokens: choice.maxTokens,
     system: [
       {
         type: "text",
@@ -38,5 +37,12 @@ export async function* streamChat(messages: ChatMessage[]) {
     ) {
       yield event.delta.text;
     }
+  }
+
+  // Newer models can decline a request (safety check); the SDK version here
+  // doesn't list "refusal" yet, hence the string compare.
+  const final = await stream.finalMessage();
+  if ((final.stop_reason as string) === "refusal") {
+    throw new Error(`${choice.label} declined to answer this request.`);
   }
 }

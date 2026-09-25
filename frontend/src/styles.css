@@ -87,7 +87,36 @@ body {
 }
 
 .msg-user { justify-content: flex-end; }
-.msg-assistant { justify-content: flex-start; }
+.msg-assistant {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.model-tag {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0 0 4px 4px;
+}
+
+.mode {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mode select {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13px;
+  max-width: 100%;
+}
 
 .bubble {
   max-width: 80%;
