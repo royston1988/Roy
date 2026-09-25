@@ -13,10 +13,18 @@ npm run dev
 - Frontend: http://localhost:5173
 - Backend:  http://localhost:3001
 
+## Photo Studio
+
+`npm run studio` → http://localhost:3002. It pulls product photos from Shopline,
+makes AI photos of Yan or the live host wearing each product, has Claude check
+the design still matches, and uploads the ones you approve. Setup and costs:
+[studio/SETUP.md](studio/SETUP.md).
+
 ## Layout
 
 - `backend/` — Express + Anthropic SDK, exposes `POST /api/chat` as Server-Sent Events
 - `frontend/` — Vite + React chat UI that consumes the SSE stream
+- `studio/` — Photo Studio: Express server + plain HTML review page
 
 ## Auto model picking
 

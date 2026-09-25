@@ -5,14 +5,16 @@
   "description": "Jarvis — a developer coding assistant powered by Claude",
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "studio"
   ],
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:backend": "npm --workspace backend run dev",
     "dev:frontend": "npm --workspace frontend run dev",
     "build": "npm --workspace backend run build && npm --workspace frontend run build",
-    "typecheck": "npm --workspace backend run typecheck && npm --workspace frontend run typecheck"
+    "typecheck": "npm --workspace backend run typecheck && npm --workspace frontend run typecheck && npm --workspace studio run typecheck",
+    "studio": "npm --workspace studio run dev"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
