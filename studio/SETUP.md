@@ -35,6 +35,9 @@ Put these in the `.env` file at the top of the project (next to `.env.example`).
    (read and write) → copy the access token.
 4. Add to `.env`: `SHOPLINE_ACCESS_TOKEN=your-token`
 
+**Test the key (safe, changes nothing on your shop):** run `npm run studio:check`.
+It lists 3 products and says ✓ if photos can be read and uploads are safe to try.
+
 ### 3. Claude (the design checker)
 
 Same key Jarvis uses: `ANTHROPIC_API_KEY=your-key`. It costs about US$0.02–0.05 per photo check.

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check-shopline": "tsx src/check-shopline.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
